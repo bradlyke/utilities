@@ -1,8 +1,23 @@
-import sys
+"""Creates a progress bar in the terminal that fills over one line only.
 
-#val is the current "record number" the program is on.
-#endv is the total number of records that is being processed.
-#pad is the number of character spaces that should be saved for val and endv
+Parameters
+----------
+val : :class:'int'
+	The current record number that the calling for loop is on.
+endv : :class:'int'
+	The total number of records that is being processed.
+bar_length : :class:'int'
+	The length, in characters, that the bar will set aside to fill.
+        Originally designed for a terminal 96 characters wide.
+
+Returns
+----------
+:class:'str'
+	A string showing the current progress.
+
+"""
+
+import sys
 
 #BENCHMARK NOTES: Running this program took 18.98 seconds for 1,000,000 iterations.
 #It took 1.8977e-5 seconds per iteration.
