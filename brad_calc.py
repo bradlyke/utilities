@@ -107,7 +107,7 @@ def z_calc():
     print('\n{0}Z CALC{0}'.format(spcrline))
     #Quick select menu. LyA, CIV, and MgII are used most often for redshift.
     #If the user chooses something other than 1,2,3 it will prompt to type name.
-    uch = input('Quick Select [1] or type name [2]?')
+    uch = input('[1] Quick Select\n[2] Type Name?')
     if uch == '1':
         print('\n---Quick Select---')
         print('[1] Ly A\n[2] C IV\n[3] Mg II')
