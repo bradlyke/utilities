@@ -78,6 +78,12 @@ def em_line(l_name):
     elif l_name == 'OII': #More for e_calc. Makes it findable for flagging during VI.
         w_out = 3728
         l_name_out = '[O II]'
+    elif l_name == 'HG': #H-gamma that can sometimes appear with strength at low z.
+        w_out = 4341.68
+        l_name_out = 'H g'
+    elif l_name == 'HD': #Included for completeness.
+        w_out = 4102.89
+        l_name_out = 'H d'
 
 
     return l_name_out,w_out #Send the formatted name and rest wavelength out into the world.
@@ -278,10 +284,13 @@ def ratio_calc():
     #Define the known ratios with the names of the red/blue lines. Uses a numpy
     #structured array so I can call columns by a name and can store strings and
     #floats in the same array.
-    ratarr = np.zeros(9,dtype=[('LINE1_NAME','U7'),('LINE2_NAME','U7'),('RATIO','f4')])
-    ratarr['LINE1_NAME'] = np.array(['Mg II','Mg II','Mg II','Mg II','C III','C III','C III','C IV','C IV'])
-    ratarr['LINE2_NAME'] = ['C III','C IV','SIV+OIV','Ly A','C IV','SIV+OIV','Ly A', 'SIV+OIV','Ly A']
-    ratarr['RATIO'] = np.array([1.4675,1.806,2.00,2.3026,1.23097,1.36286,1.56908,1.10714,1.27467])
+    ratarr = np.zeros(17,dtype=[('LINE1_NAME','U7'),('LINE2_NAME','U7'),('RATIO','f4')])
+    ratarr['LINE1_NAME'] = np.array(['Mg II','Mg II','Mg II','Mg II','C III','C III','C III','C IV','C IV',
+                            'O III','O III','O III','H b','H b','H b','H g','H g'])
+    ratarr['LINE2_NAME'] = np.array(['C III','C IV','SIV+OIV','Ly A','C IV','SIV+OIV','Ly A', 'SIV+OIV','Ly A',
+                            'Mg II','C III','H g','Mg II','C III','H g','Mg II','C III'])
+    ratarr['RATIO'] = np.array([1.4675,1.806,2.00,2.3026,1.23097,1.36286,1.56908,1.10714,1.27467,
+                            1.78857,2.6237,1.1535,1.7364,2.547,1.1198,1.5506,2.2746])
 
     #Find the smallest absolute difference between the calculated and known ratios.
     #The smallest difference should be the right ratio (if it's close enough).
