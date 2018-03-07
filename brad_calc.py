@@ -269,6 +269,7 @@ def e_calc():
 ################################################################################
 def ratio_calc():
     #Formatting stuff for the pretty boxes and lines for visual cues.
+    mg2check = 0
     spcrline = '-'*10
     numbox = '#'*53
     pline = ' '*16
@@ -300,6 +301,17 @@ def ratio_calc():
     rdiff = np.absolute(ratc - ratarr['RATIO'])
     mindiff = np.amin(rdiff)
     ml_val = np.where(rdiff == np.amin(rdiff))[0]
+    if ((ratarr['LINE1_NAME'][ml_val[0]] == 'Mg II')|(ratarr['LINE2_NAME'][ml_val[0]] == 'Mg II')):
+        mg2check = 1
+        name_arr = np.array([ratarr['LINE1_NAME'][ml_val[0]],ratarr['LINE2_NAME'][ml_val[0]]])
+        wname = np.where(name_arr == 'Mg II')[0]
+        if wname[0] == 0:
+            l_obs = l1c
+        elif wname[0] == 1:
+            l_obs = l2c
+        l_rest = 2800
+        z_out = (l_obs - l_rest) / float(l_rest)
+        l_name = 'Mg II'
     #If the difference is too large, or the ratio is larger than one we would select
     #warn the user and return to the main menu.
     if ((ratc >= 2.5)|(mindiff > 0.01)):
@@ -312,6 +324,26 @@ def ratio_calc():
     #center used), Blue second. Also return the calculated ratio from user input
     #line centers and the difference between tha ratio and the closest one found.
     #Does it in a box.
+    elif mg2check == 1:
+        print('\n')
+        print(numbox)
+        print('#  Most likely line pair:'+' '*27+'#')
+        print('#  Red Line: {0} | Blue Line: {1}{2}#'.format(ratarr['LINE1_NAME'][ml_val[0]],ratarr['LINE2_NAME'][ml_val[0]],pline))
+        print('#  Calculated ratio: R = {0:01.4f}{1}#'.format(ratc,pline2))
+        print('#  Difference between calculated and table: {0:01.4f}  #'.format(np.amin(rdiff)))
+        print(numbox)
+        print('\n')
+        extra_str = 'USING THE INPUT LAMBDA FOR MGII'
+        ident_str = '#     Line: {0:11s}     #'.format(l_name)
+        wave_str =  '#     Wavelength: {0:04d}      #'.format(int(l_obs))
+        out_str = '#     Redshift: {0:07.5f}     #'.format(z_out)
+        breaker = '#'*29
+        print(extra_str)
+        print(breaker)
+        print(ident_str)
+        print(wave_str)
+        print(out_str)
+        print(breaker)
     else:
         print('\n')
         print(numbox)
