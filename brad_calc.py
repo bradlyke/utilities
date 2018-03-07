@@ -84,6 +84,9 @@ def em_line(l_name):
     elif l_name == 'HD': #Included for completeness.
         w_out = 4102.89
         l_name_out = 'H d'
+    elif l_name == 'HA':
+        w_out = 6563
+        l_name_out = 'H a'
 
 
     return l_name_out,w_out #Send the formatted name and rest wavelength out into the world.
