@@ -27,7 +27,7 @@ def pbar(val,endv,bar_length=40):
     pad = len(str(endv))
     num_comma = int(pad/3)
     pad2 = pad + num_comma
-    prct = float(val) / float(endv)
+    prct = float(val + 1) / float(endv)
     arrow = '=' * int(round(prct * bar_length) - 1) + '>'
     spcs = ' ' * int(bar_length - len(arrow))
 
