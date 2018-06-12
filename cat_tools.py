@@ -1,22 +1,32 @@
 from astropy.io import fits
 import numpy as np
+from pydl.pydlutils.sdss import sdss_flagname
+from pydl.pydlutils.sdss import sdss_flagval
 import tmark
 import progressBar as pb
 import glob
 
 #Makes either a PMF hash array or a PM hash array. Parameter include_fiber
 #controls this. Returns a 1-D array of strings.
-def mk_hash(input_rec,include_fiber=True):
+def mk_hash(inrec,include_fiber=True):
     tmark.tm('Creating Hash Array')
-    num_rec = len(input_rec)
-    max_plate = str(np.amax(input_rec['PLATE']))
-    len_plate = len(max_plate)
+    num_rec = len(inrec)
+    #max_plate = str(np.amax(inrec['PLATE']))
+    #len_plate = len(max_plate)
+    len_plate = 5
     if include_fiber==True:
         str_size = len_plate + 11
         rec_hsh = np.chararray(num_rec,itemsize=str_size,unicode=True)
     else:
         str_size = len_plate + 6
         rec_hsh = np.chararray(num_rec,itemsize=str_size,unicode=True)
+    if include_fiber==True:
+        rec_hsh = np.array(['%05d-%05d-%04d'%(pt,mt,ft) for pt,mt,ft in zip(
+                            inrec['PLATE'],inrec['MJD'],inrec['FIBERID'])])
+    else:
+        rec_hsh = np.array(['%05d-%05d'%(pt,mt) for pt,mt in zip(
+                            inrec['PLATE'],inrec['MJD'])])
+    '''
     for i in range(num_rec):
         pt = input_rec['PLATE'][i]
         mt = input_rec['MJD'][i]
@@ -27,7 +37,7 @@ def mk_hash(input_rec,include_fiber=True):
             hst = '{0:0{1}d}-{2:05d}'.format(pt,len_plate,mt)
         rec_hsh[i] = hst
         pb.pbar(i,num_rec)
-
+    '''
     return rec_hsh
 
 #This function is designed to load a FITS table into a numpy structured array,
@@ -136,3 +146,28 @@ def rec_match_srt(rec1,rec2):
     rec1_adr = (sort_right_rec2 - sort_left_rec2 > 0).nonzero()[0]
 
     return rec1a[rec1_adr],rec2a[rec2_adr]
+
+#This program finds the object that you want in the file, then tells you all of
+#the targeting flags that object has, by name.
+def flags(infile,plate_in,fiber_in):
+    pt = plate_in
+    ft = fiber_in
+    w1 = np.where((infile['PLATE']==pt)&(infile['FIBERID']==ft))[0]
+
+    bt1_flags = sdss_flagname('BOSS_TARGET1',infile['BOSS_TARGET1'][w1])
+    et0_flags = sdss_flagname('EBOSS_TARGET0',infile['EBOSS_TARGET0'][w1])
+    et1_flags = sdss_flagname('EBOSS_TARGET1',infile['EBOSS_TARGET1'][w1])
+    et2_flags = sdss_flagname('EBOSS_TARGET2',infile['EBOSS_TARGET2'][w1])
+    at1_flags = sdss_flagname('ANCILLARY_TARGET1',infile['ANCILLARY_TARGET1'][w1])
+    at2_flags = sdss_flagname('ANCILLARY_TARGET2',infile['ANCILLARY_TARGET2'][w1])
+
+    print('\n')
+    print('Object Flags')
+    print('------------')
+    print('BOSS_TARGET1: {}'.format(bt1_flags))
+    print('EBOSS_TARGET0: {}'.format(et0_flags))
+    print('EBOSS_TARGET1: {}'.format(et1_flags))
+    print('EBOSS_TARGET2: {}'.format(et2_flags))
+    print('ANCILLARY_TARGET1: {}'.format(at1_flags))
+    print('ANCILLARY_TARGET2: {}'.format(at2_flags))
+    print('\n')
