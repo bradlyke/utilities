@@ -128,6 +128,8 @@ def fet(in_rec,in_name):
     #Tell me the final file name so I have a record of what was output.
     print('\nFile Written out as: {}'.format(out_name))
 
+    return out_name
+
 #This program is designed to find all of the matches in two different fits
 #flat files, finding the addresses where the objects in 1 match the objects in 2.
 #rec_match_srt only works well with hash arrays (they compare one array)
