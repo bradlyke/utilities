@@ -357,6 +357,65 @@ def ratio_calc():
 
 ################################################################################
 #                                                                              #
+#  FUNCTION: Broad Absorption Lines Check for CIV                              #
+#  PURPOSE: Calculates the width of the trough blueward of CIV to see if it    #
+#           meets the 2000 km/s width criteria.                                #
+#                                                                              #
+#  ACCEPTS: Wavelength inputs in Angstroms for the left and right side of the  #
+#           trough and the systemic redshift (z) of the QSO.                   #
+#  RETURNS: The rest-frame width in km/s of the trough and a BAL flag          #
+#           recommendation.                                                    #
+#  INPUTS:  None                                                               #
+#  OUTPUTS: None                                                               #
+#  OUTPUTS To: Nowhere                                                         #
+#                                                                              #
+################################################################################
+def bal_check():
+    #Formatting stuff for the pretty boxes and lines for visual cues.
+    bal_flag = 'NOT BAL'
+    spcrline = '-'*10
+    numbox = '#'*53
+    pline = ' '*16
+    pline2 = ' '*21
+    boxstr = '#'*50
+    print('\n{0}BAL CHECK{0}'.format(spcrline))
+
+    #Ask for the trough edges. No error trapping here. You put in letters, it crashes.
+    #Left/right doesn't matter, it's taking an absolute difference.
+    l1e = float(input('Trough Edge 1 (Ang): '))
+    l2e = float(input('Trough Edge 2 (Ang): '))
+    zsys = float(input('QSO Redshift: '))
+
+    #Calculate z values for the two edges and the difference.
+    l1ez = (l1e - 1550) / 1550
+    l2ez = (l2e - 1550) / 1550
+    z_diff = np.abs(l1ez - l2ez)
+
+    #Calculate the velocity difference.
+    v_diff = z_diff * 2.99792458e5 #multiplied by speed of light in km/s
+
+    #Now move it to the rest frame:
+    v_rest = int(v_diff / (1 + zsys))
+    if v_rest >= 2000:
+        bal_flag = 'BAL (2)'
+    elif ((v_rest>=1000)&(v_rest<2000)):
+        bal_flag = 'Possible BAL (20)'
+    else:
+        bal_flag = 'NOT BAL'
+
+    #If the velocity in rest frame is above 2000 km/s, call it a BAL. If it's
+    #between 1000 and 2000, give it the BAL? flag (20). Otherwise, not a BAL.
+    print('\n')
+    print(numbox)
+    print('#  Velocity Difference (rest): {0:5d} km/s           #'.format(v_rest))
+    print('#' + ' '*51 + '#')
+    print('#      BAL? {:17}                       #'.format(bal_flag))
+    print(numbox)
+
+    #End of program will return the user to the main menu.
+
+################################################################################
+#                                                                              #
 #  FUNCTION: Main Menu (active)                                                #
 #  PURPOSE: Creates a main menu for a user to select a subroutine. Active menu #
 #           means that when a subroutine completes, it returns to this menu    #
@@ -398,7 +457,7 @@ def main_menu():
         print(linestr)
         #Ask the user for their selection. Numbers are used, but letters are
         #added in case users can't follow instructions.
-        print('[1] Z Calc\n[2] E Calc\n[3] Ratio Calc\n[4] Quit')
+        print('[1] Z Calc\n[2] E Calc\n[3] Ratio Calc\n[4] BAL Check\n[5] Quit')
         print(linestr)
         n = input('Selection: ')
         if ((n == '1')|(n == 'Z')|(n == 'z')):
@@ -407,6 +466,8 @@ def main_menu():
             e_calc()
         elif ((n == '3')|(n == 'R')|(n == 'r')):
             ratio_calc()
+        elif ((n == '4')|(n == 'B')|(n == 'b')):
+            bal_check()
         else:
             print('\n')
             print(boxstr)
