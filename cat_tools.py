@@ -173,3 +173,17 @@ def flags(infile,plate_in,fiber_in):
     print('ANCILLARY_TARGET1: {}'.format(at1_flags))
     print('ANCILLARY_TARGET2: {}'.format(at2_flags))
     print('\n')
+
+#This is for printing out a more human-readable version of a single row in a
+#FITS record. The rec_adr needs to be used if input masked array has more than
+#one "row" of data. Defaults to 0, same as calling inrec[w][0] or inrec[w[0]].
+def rec_view(inrec,rec_adr=0):
+    cnames = np.array(inrec.dtype.names)
+    max_char = 0
+    for i in range(len(cnames)):
+        temp_length = len(cnames[i])
+        if temp_length > max_char:
+            max_char = temp_length
+    for i in range(len(cnames)):
+        out_str = '{0:{1}} | {2}'.format(cnames[i],max_char,inrec[cnames[i]][rec_adr])
+        print(out_str)
