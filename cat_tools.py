@@ -46,12 +46,18 @@ def file_load(infile):
     cat_file = fits.open(infile)[1].data
     num_rec = len(cat_file)
     column_names = np.array(cat_file.columns.names)
-    column_forms = np.array(cat_file.columns.formats,dtype='U9')
+    column_forms = np.array(cat_file.columns.formats,dtype='U10')
     num_cols = len(column_names)
 
     for i in range(num_cols):
         if 'A' in column_forms[i]:
             column_forms[i] = 'U{}'.format(column_forms[i][0:-1])
+        elif 'B' in column_forms[i]:
+            num_check = column_forms[i][0:-1]
+            if num_check == '':
+                column_forms[i] = 'B'
+            else:
+                column_forms[i] = '{}B'.format(num_check)
         elif 'D' in column_forms[i]:
             num_check = column_forms[i][0:-1]
             if num_check == '':
