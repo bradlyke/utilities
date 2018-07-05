@@ -31,6 +31,7 @@ Returns
     Returns the absolute i-band magnitude of the object.
 """
 import numpy as np
+import sys
 
 #USES FLAT COSMOLOGY WITH COSMOLOGICAL CONSTANT: BENCHMARK MODEL
 #Define a number of used constants, taken 20180314 from Ned Wright's page.
@@ -174,3 +175,8 @@ def red_report(z_in):
     print('Comoving Volume:   {:7.2f} Gpc^3'.format(covol))
     print('Angular Size Dist: {:7.1f} Mpc'.format(size_ang))
     print('Luminosity Dist:   {:7.1f} Mpc'.format(lumdist))
+    print('\n')
+
+if __name__=='__main__':
+	user_z = float(sys.argv[1])
+	red_report(user_z)

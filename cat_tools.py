@@ -193,3 +193,9 @@ def rec_view(inrec,rec_adr=0):
     for i in range(len(cnames)):
         out_str = '{0:{1}} | {2}'.format(cnames[i],max_char,inrec[cnames[i]][rec_adr])
         print(out_str)
+    print('\n')
+
+def find_rec(inrec,plate,mjd,fiberid,pname='PLATE',mname='MJD',fibname='FIBERID'):
+    pt,mt,ft = plate,mjd,fiberid
+    wpmf = np.where((inrec[pname]==pt)&(inrec[mname]==mt)&(inrec[fibname]==ft))[0]
+    return wpmf
