@@ -161,14 +161,45 @@ def flags(infile,plate_in,fiber_in):
     pt = plate_in
     ft = fiber_in
     w1 = np.where((infile['PLATE']==pt)&(infile['FIBERID']==ft))[0]
+    unstr = '--UNUSED--'
 
-    bt1_flags = sdss_flagname('BOSS_TARGET1',infile['BOSS_TARGET1'][w1])
-    et0_flags = sdss_flagname('EBOSS_TARGET0',infile['EBOSS_TARGET0'][w1])
-    et1_flags = sdss_flagname('EBOSS_TARGET1',infile['EBOSS_TARGET1'][w1])
-    et2_flags = sdss_flagname('EBOSS_TARGET2',infile['EBOSS_TARGET2'][w1])
-    at1_flags = sdss_flagname('ANCILLARY_TARGET1',infile['ANCILLARY_TARGET1'][w1])
-    at2_flags = sdss_flagname('ANCILLARY_TARGET2',infile['ANCILLARY_TARGET2'][w1])
-
+    try:
+        bt1_flags = sdss_flagname('BOSS_TARGET1',infile['BOSS_TARGET1'][w1])
+        if infile['BOSS_TARGET1'][w1] == -1:
+            bt1_flags = unstr
+    except (ValueError, KeyError):
+        bt1_flags = unstr
+    try:
+        et0_flags = sdss_flagname('EBOSS_TARGET0',infile['EBOSS_TARGET0'][w1])
+        if infile['EBOSS_TARGET0'][w1] == -1:
+            et0_flags = unstr
+    except (ValueError, KeyError):
+        et0_flags = unstr
+    try:
+        et1_flags = sdss_flagname('EBOSS_TARGET1',infile['EBOSS_TARGET1'][w1])
+        if infile['EBOSS_TARGET1'][w1] == -1:
+            et1_flags = unstr
+    except (ValueError, KeyError):
+        et1_flags = unstr
+    try:
+        et2_flags = sdss_flagname('EBOSS_TARGET2',infile['EBOSS_TARGET2'][w1])
+        if infile['EBOSS_TARGET2'][w1] == -1:
+            et2_flags = unstr
+    except (ValueError, KeyError):
+        et2_flags = unstr
+    try:
+        at1_flags = sdss_flagname('ANCILLARY_TARGET1',infile['ANCILLARY_TARGET1'][w1])
+        if infile['ANCILLARY_TARGET1'][w1] == -1:
+            at1_flags = unstr
+    except (ValueError, KeyError):
+        at1_flags = unstr
+    try:
+        at2_flags = sdss_flagname('ANCILLARY_TARGET2',infile['ANCILLARY_TARGET2'][w1])
+        if infile['ANCILLARY_TARGET2'][w1] == -1:
+            at2_flags = unstr
+    except (ValueError, KeyError):
+        at2_flags = unstr
+        
     print('\n')
     print('Object Flags')
     print('------------')
