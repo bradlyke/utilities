@@ -106,7 +106,7 @@ def file_load(infile):
 #without the .fits at the end.
 #This essentially replaces the last xxx.writeto(file_name) that is used to write
 #fits files out.
-def fet(in_rec,in_name):
+def fet(in_rec,in_name,quiet=False):
     #rename the BinTableHDU as dof for internal purposes.
     dof = in_rec
     #Glob is used to find the list of files that exists. This is only for attempting
@@ -132,7 +132,8 @@ def fet(in_rec,in_name):
                 ver_num += 1
 
     #Tell me the final file name so I have a record of what was output.
-    print('\nFile Written out as: {}'.format(out_name))
+    if quiet==False:
+        print('\nFile Written out as: {}'.format(out_name))
 
     return out_name
 
@@ -199,7 +200,7 @@ def flags(infile,plate_in,fiber_in):
             at2_flags = unstr
     except (ValueError, KeyError):
         at2_flags = unstr
-        
+
     print('\n')
     print('Object Flags')
     print('------------')
