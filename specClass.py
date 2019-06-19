@@ -17,6 +17,7 @@ class spectrum:
         self.lam = 10**self.loglam #Convert this to a decimal wavelength in Angstroms.
         self.flux = self.data['flux'] #Load the flux. Absolute, units are in plot.
         self.ivar = self.data['ivar'] #Load the inverse variance. Needed for plotting and boxcar.
+        self.ferr = self.data['ivar']**(-0.5)
 
     #We want to be able to smooth it fairly easily. Smooth_pct = 10 is good for some stuff.
     def boxcar(self,flux_arr,flux_var,smooth_pct,weighted=False):
@@ -51,7 +52,7 @@ class spectrum:
         return box_flux,box_err
 
 
-    def paper_plot_small(self,smooth=False,err=False,sky=False,save=False,form='p'):
+    def paper_plot_small(self,smooth=False,err=False,sky=False,scale_sky=False,save=False,form='p'):
         wobs = np.where((self.lam>=3700)&(self.lam<=9000))[0]
         flux_range = np.amax(self.flux[wobs]) - np.amin(self.flux[wobs])
         flux_pad = float(flux_range)/10
@@ -60,6 +61,7 @@ class spectrum:
         x_lower = np.amin(self.lam)
         x_upper = np.amax(self.lam)
 
+        matplotlib.rc('font',size=15)
         fig1,ax1 = plt.subplots(figsize=(5,4))
         if smooth==True:
             self.bflux,self.berr = self.boxcar(self.flux,self.ivar,10,weighted=True)
@@ -68,10 +70,13 @@ class spectrum:
         else:
             ax1.plot(self.lam,self.flux,color='black')
         if sky==True:
-            self.sky = self.data['sky']
-            ax1.plot(self.lam,self.sky,color='green',linewidth=0.7)
+            if scale_sky==True:
+                self.sky = self.data['sky'] / 10.0
+            else:
+                self.sky = self.data['sky']
+            ax1.plot(self.lam,self.sky,color='green',linewidth=0.7,alpha=0.5)
         if err==True:
-            ax1.plot(self.lam,self.ivar,color='red',linewidth=0.6)
+            ax1.plot(self.lam,self.ferr,color='red',linewidth=0.6)
         ax1.set_xlim((x_lower,x_upper))
         ax1.set_ylim((y_lower,y_upper))
         ax1.set_xlabel(r'Wavelength (\AA)',fontsize=15)
@@ -95,7 +100,7 @@ class spectrum:
         else:
             plt.show()
 
-    def plot_large(self,smooth=False,err=False,sky=False,save=False,form='p'):
+    def plot_large(self,smooth=False,err=False,sky=False,scale_sky=False,save=False,form='p'):
         wobs = np.where((self.lam>=3700)&(self.lam<=9000))[0]
         flux_range = np.amax(self.flux[wobs]) - np.amin(self.flux[wobs])
         flux_pad = float(flux_range)/10
@@ -104,6 +109,7 @@ class spectrum:
         x_lower = np.amin(self.lam)
         x_upper = np.amax(self.lam)
 
+        matplotlib.rc('font',size=18)
         fig1,ax1 = plt.subplots(figsize=(10,8))
         if smooth==True:
             self.bflux,self.berr = self.boxcar(self.flux,self.ivar,10,weighted=True)
@@ -112,10 +118,13 @@ class spectrum:
         else:
             ax1.plot(self.lam,self.flux,color='black')
         if sky==True:
-            self.sky = self.data['sky']
-            ax1.plot(self.lam,self.sky,color='green',linewidth=0.7)
+            if scale_sky==True:
+                self.sky = self.data['sky'] / 10.0
+            else:
+                self.sky = self.data['sky']
+            ax1.plot(self.lam,self.sky,color='green',linewidth=0.7,alpha=0.5)
         if err==True:
-            ax1.plot(self.lam,self.ivar,color='red',linewidth=0.6)
+            ax1.plot(self.lam,self.ferr,color='red',linewidth=0.6)
         ax1.set_xlim((x_lower,x_upper))
         ax1.set_ylim((y_lower,y_upper))
         ax1.set_xlabel(r'Wavelength (\AA)',fontsize=18)
@@ -139,7 +148,7 @@ class spectrum:
         else:
             plt.show()
 
-    def poster_plot(self,smooth=False,err=False,sky=False,save=False,form='p'):
+    def poster_plot(self,smooth=False,err=False,sky=False,scale_sky=False,save=False,form='p'):
         wobs = np.where((self.lam>=3700)&(self.lam<=9000))[0]
         flux_range = np.amax(self.flux[wobs]) - np.amin(self.flux[wobs])
         flux_pad = float(flux_range)/10
@@ -148,6 +157,7 @@ class spectrum:
         x_lower = np.amin(self.lam)
         x_upper = np.amax(self.lam)
 
+        matplotlib.rc('font',size=24)
         fig1,ax1 = plt.subplots(figsize=(15,12))
         if smooth==True:
             self.bflux,self.berr = self.boxcar(self.flux,self.ivar,10,weighted=True)
@@ -156,10 +166,13 @@ class spectrum:
         else:
             ax1.plot(self.lam,self.flux,color='black')
         if sky==True:
-            self.sky = self.data['sky']
-            ax1.plot(self.lam,self.sky,color='green',linewidth=0.7)
+            if scale_sky==True:
+                self.sky = self.data['sky'] / 10.0
+            else:
+                self.sky = self.data['sky']
+            ax1.plot(self.lam,self.sky,color='green',linewidth=0.7,alpha=0.5)
         if err==True:
-            ax1.plot(self.lam,self.ivar,color='red',linewidth=0.6)
+            ax1.plot(self.lam,self.ferr,color='red',linewidth=0.6)
         ax1.set_xlim((x_lower,x_upper))
         ax1.set_ylim((y_lower,y_upper))
         ax1.set_xlabel(r'Wavelength (\AA)',fontsize=24)
@@ -184,8 +197,8 @@ class spectrum:
             plt.show()
 
 #This is mainly for testing the functions within the class.
-#if __name__=='__main__':
-    #spec = spectrum('spec-7294-56739-0021.fits')
-    #spec.paper_plot_small(smooth=True,err=True,sky=True)
-    #spec.plot_large(smooth=True,err=True,sky=True)
-    #spec.poster_plot(smooth=True,err=True,sky=True)
+if __name__=='__main__':
+    spec = spectrum('spec-7379-56713-0938-dr16.fits')
+    spec.paper_plot_small(smooth=True,err=True,sky=True,scale_sky=True)
+    spec.plot_large(smooth=True,err=True,sky=True,scale_sky=True)
+    spec.poster_plot(smooth=True,err=True,sky=True,scale_sky=True)

@@ -5,6 +5,9 @@ from pydl.pydlutils.sdss import sdss_flagval
 import tmark
 import progressBar as pb
 import glob
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+from sciCon import mks
 
 #Makes either a PMF hash array or a PM hash array. Parameter include_fiber
 #controls this. Returns a 1-D array of strings.
@@ -227,7 +230,57 @@ def rec_view(inrec,rec_adr=0):
         print(out_str)
     print('\n')
 
+#This is for getting the index for a record matching a plate,mjd,fiber.
+#I use this functionality enough, I was tired of typing the where command.
 def find_rec(inrec,plate,mjd,fiberid,pname='PLATE',mname='MJD',fibname='FIBERID'):
     pt,mt,ft = plate,mjd,fiberid
     wpmf = np.where((inrec[pname]==pt)&(inrec[mname]==mt)&(inrec[fibname]==ft))[0]
     return wpmf
+
+#The next two are for converting from sexagessimal to decimal RA/DEC or back.
+#Returns the desired in human-readable format.
+def dec2sex(rad,decd):
+    c = SkyCoord(ra=rad*u.degree,dec=decd*u.degree,frame='icrs')
+    c_hms = c.ra.hms
+    c_dms = c.dec.dms
+    sig = '+'
+    if decd < 0:
+        sig = '-'
+    RAstr = 'RA - {0:02d}:{1:02d}:{2:05.2f}'.format(int(c_hms.h),int(c_hms.m),c_hms.s)
+    DECstr = 'DEC - {0}{1:02d}:{2:02d}:{3:04.1f}'.format(sig,int(c_dms.d),int(c_dms.m),c_dms.s)
+    out_str = '{0} | {1}'.format(RAstr,DECstr)
+    print(out_str)
+
+def sex2dec(ras,decs):
+    c = SkyCoord(ras,decs,frame='icrs')
+    c_ra = c.ra.degree
+    c_dec = c.dec.degree
+    out_str = 'RA - {0:.4f} | DEC - {1:.4f}'.format(c_ra,c_dec)
+    print(out_str)
+
+#The next two are for finding redshift error in km/s. p controls whether it
+#prints the delta_v or returns the value (for importing).
+def zdiff(z1,zt,p=0):
+    ckms = mks.c / 1000
+    zd = (ckms*np.abs(z1-zt))/(1+zt)
+    if p!=0:
+        print('dv = {:4d} km/s'.format(int(zd)))
+    else:
+        return zd
+
+#This calculates the redshift error based on the wavelength shown as the line
+#center (lam1) and what actually corresponds to the line center (lamt). For
+#testing whether a misidentified line center corresponds to a delta_v > 3000 km/s.
+#The p paramter controls printing vs. returning like above.
+def lzdiff(lam1,lamt,p=0):
+    ckms = mks.c / 1000
+    ld = (ckms*np.abs(lam1-lamt))/lamt
+    if p!=0:
+        print('dv = {:4d} km/s'.format(int(ld)))
+    else:
+        return ld
+
+def cat_set(cat1,cat2):
+    cathash1,cathash2 = mk_hash(cat1),mk_hash(cat2)
+    cat1args,cat2args = rec_match_srt(cathash1,cathash2)
+    return cat1args,cat2args

@@ -26,6 +26,9 @@
 # Note: REQUIRES PYTHON 3.5 or later.                                          #
 ################################################################################
 import numpy as np
+from colorama import Fore
+from colorama import Back
+from colorama import Style
 
 ################################################################################
 #                                                                              #
@@ -70,7 +73,7 @@ def em_line(l_name):
         w_out = 1033
         l_name_out = 'Ly b'
     elif l_name == 'OIII': #The red peak of the double horns.
-        w_out = 5008
+        w_out = 5007
         l_name_out = '[O III]'
     elif l_name == 'HB': #Shows up with OIII. Sometimes a redshift can be found.
         w_out = 4862
@@ -119,7 +122,7 @@ def z_calc():
     uch = input('[1] Quick Select\n[2] Type Name?')
     if uch == '1':
         print('\n---Quick Select---')
-        print('[1] Ly A\n[2] C IV\n[3] Mg II')
+        print('[1] Ly A\n[2] C IV\n[3] Mg II\n[4] C III')
         qchl = input('Selection: ')
         #Selection uses strings so that an input letter doesn't crash but instead
         #prompts the user to type the name.
@@ -129,6 +132,8 @@ def z_calc():
             l_name_in = 'civ'
         elif qchl == '3':
             l_name_in = 'mgii'
+        elif qchl == '4':
+            l_name_in = 'ciii'
         else:
             print('Not a valid option, try typing the name.') #You didn't choose a given option.
             l_name_in = input('\nTransition Name: ')
@@ -145,7 +150,7 @@ def z_calc():
 
     #Redshift printed for the user in a box.
     ident_str = '#     Line: {0:11s}     #'.format(l_n_in)
-    out_str = '#     Redshift: {0:07.5f}     #'.format(z)
+    out_str = '#     Redshift: {0:05.3f}       #'.format(z)
     breaker = '#'*29
     print('\n')
     print(breaker)
@@ -187,7 +192,7 @@ def e_calc():
     #For the quick-select, lists the 4 most common lines you hunt for.
     if uche == '1':
         print('\n---Quick Select---')
-        print('[1] Ly A\n[2] C IV\n[3] Mg II\n[4] O II')
+        print('[1] Ly A\n[2] C IV\n[3] Mg II\n[4] O II\n[5] H b\n[6] C III')
         qchle = input('Selection: ')
         #Selection uses strings so that an input letter doesn't crash but instead
         #prompts the user to type the name.
@@ -199,6 +204,10 @@ def e_calc():
             l_name_in = 'mgii'
         elif qchle == '4':
             l_name_in = 'oii'
+        elif qchle == '5':
+            l_name_in = 'hb'
+        elif qchle == '6':
+            l_name_in = 'ciii'
         else:
             #If the user did not input a valid number, ask for input.
             print('Not a valid option, try typing the name.')
@@ -221,7 +230,7 @@ def e_calc():
     #If the observable wavelength is outside the 3600-9800 Angstrom range, it
     #won't be visible in our spectra, so report this to the user.
     ident_str = '#     Line: {0:11s}      #'.format(l_n_in)
-    out_str = '#     Redshift: {0:07.5f}      #'.format(l_z)
+    out_str = '#     Redshift: {0:05.3f}        #'.format(l_z)
     if l_o != -1:
         out_str2 = '#     L_Obs: {0:5d} ang       #'.format(l_o)
     else:
@@ -283,18 +292,21 @@ def ratio_calc():
     l2c = float(input('Line 2 Center: '))
 
     #Calculate the ratio.
-    ratc = l1c / l2c
+    if l1c >= l2c:
+        ratc = l1c / l2c
+    else:
+        ratc = l2c / l1c
 
     #Define the known ratios with the names of the red/blue lines. Uses a numpy
     #structured array so I can call columns by a name and can store strings and
     #floats in the same array.
-    ratarr = np.zeros(17,dtype=[('LINE1_NAME','U7'),('LINE2_NAME','U7'),('RATIO','f4')])
+    ratarr = np.zeros(20,dtype=[('LINE1_NAME','U7'),('LINE2_NAME','U7'),('RATIO','f4')])
     ratarr['LINE1_NAME'] = np.array(['Mg II','Mg II','Mg II','Mg II','C III','C III','C III','C IV','C IV',
-                            'O III','O III','O III','H b','H b','H b','H g','H g'])
+                            'O III','O III','O III','H b','H b','H b','H g','H g','O II','H a','Ly B'])
     ratarr['LINE2_NAME'] = np.array(['C III','C IV','SIV+OIV','Ly A','C IV','SIV+OIV','Ly A', 'SIV+OIV','Ly A',
-                            'Mg II','C III','H g','Mg II','C III','H g','Mg II','C III'])
+                            'Mg II','C III','H g','Mg II','C III','H g','Mg II','C III','Mg II','H b','Ly A'])
     ratarr['RATIO'] = np.array([1.4675,1.806,2.00,2.3026,1.23097,1.36286,1.56908,1.10714,1.27467,
-                            1.78857,2.6237,1.1535,1.7364,2.547,1.1198,1.5506,2.2746])
+                            1.78857,2.6237,1.1535,1.7364,2.547,1.1198,1.5506,2.2746,1.33143,1.34985,1.17642])
 
     #Find the smallest absolute difference between the calculated and known ratios.
     #The smallest difference should be the right ratio (if it's close enough).
@@ -336,7 +348,7 @@ def ratio_calc():
         extra_str = 'USING THE INPUT LAMBDA FOR MGII'
         ident_str = '#     Line: {0:11s}     #'.format(l_name)
         wave_str =  '#     Wavelength: {0:04d}      #'.format(int(l_obs))
-        out_str = '#     Redshift: {0:07.5f}     #'.format(z_out)
+        out_str = '#     Redshift: {0:05.3f}       #'.format(z_out)
         breaker = '#'*29
         print(extra_str)
         print(breaker)
@@ -416,6 +428,86 @@ def bal_check():
 
 ################################################################################
 #                                                                              #
+#  FUNCTION: Emission Line Observable Calculator 2                             #
+#  PURPOSE: Calculates the observed wavelengths for a number of emission lines #
+#           from the given redshift. This will call the lines from em_line().  #
+#           The name is input (or quick select) line z_calc(). Useful when     #
+#           hunting for an emission line in a noisy spectra.                   #
+#                                                                              #
+#  ACCEPTS: Quick Select(chooses a common line), or type the em name in all    #
+#           lowercase with no spaces. It will capitalize it for the user.      #
+#           Also requires the possible redshift in both cases.                 #
+#           Example name input: 'lya' for Lyman Alpha, or 'hb' for H-beta.     #
+#           Note: roman numerals are used. example: 'mgii'                     #
+#  RETURNS: The name of the line used (for checking), the input redshift (for  #
+#           checking), and the observable wavelength at that z-value (L_Obs).  #
+#           Does so in a pretty pretty #-lined box.                            #
+#  INPUTS:  None                                                               #
+#  OUTPUTS: None                                                               #
+#  OUTPUTS To: Nowhere                                                         #
+#                                                                              #
+################################################################################
+def e_calc2():
+    #Formatting stuff and boxing strings.
+    spcrline = '-'*10
+    print('\n{0}E CALC2{0}'.format(spcrline))
+    #Ask the user for a possible redshift:
+    uche = float(input('Possible Redshift: '))
+    l_name_arr = np.array(['lya','siv','civ','ciii','mgii','oii','hb','oiii'])
+    breaker = '#'*30
+    out_str = '#     Redshift: {0:05.3f}        #'.format(uche)
+    print('\n')
+    print(breaker)
+    print(out_str)
+    for lna in l_name_arr:
+        l_name_in = lna
+        l_in = l_name_in.upper()
+        l_n_in, l_r = em_line(l_in)
+        l_o = int(float(l_r) * float(uche + 1))
+        if l_name_in == 'siv':
+            l_n_in = 'S/O IV'
+        if l_o > 10000:
+            padstr = ' '*12
+        else:
+            padstr = ' '*13
+        if ((l_o >= 9800)|(l_o<=3600)):
+            line_str = '#  {}{:7}: {:4d}{}{}#'.format(Fore.RED,l_n_in,l_o,Style.RESET_ALL,padstr)
+        elif ((l_o>3600)&(l_o<=7200)):
+            line_str = '#  {}{}{:7}: {:4d}{}{}#'.format(Fore.GREEN,Style.BRIGHT,l_n_in,l_o,Style.RESET_ALL,padstr)
+        else:
+            line_str = '#  {}{:7}: {:4d}{}{}#'.format(Fore.YELLOW,l_n_in,l_o,Style.RESET_ALL,padstr)
+        print(line_str)
+    print(breaker)
+
+    #End of program will return the user to the main menu.
+
+def v_diff():
+    #Formatting and pretty stuff to make visual cues obvious.
+    spcrline = '-'*10
+    print('\n{0}DELTA V{0}\n'.format(spcrline))
+
+    ckms = 299792.458
+    z1 = float(input('Z_1: '))
+    zt = float(input('Z_true: '))
+    dv = (ckms*np.abs(z1-zt))/(1+zt)
+
+    #delta_v printed for the user in a box.
+    ident_str = '#     Z_1:    {:5.3f}         #'.format(z1)
+    ident_str2 = '#     Z_true: {:5.3f}         #'.format(zt)
+    out_str = '#     del_v: {:6,d} km/s   #'.format(int(dv))
+    breaker = '#'*29
+    print('\n')
+    print(breaker)
+    print(ident_str)
+    print(ident_str2)
+    print(out_str)
+    print(breaker)
+
+    #End of program will return the user to the main menu.
+
+
+################################################################################
+#                                                                              #
 #  FUNCTION: Main Menu (active)                                                #
 #  PURPOSE: Creates a main menu for a user to select a subroutine. Active menu #
 #           means that when a subroutine completes, it returns to this menu    #
@@ -457,7 +549,7 @@ def main_menu():
         print(linestr)
         #Ask the user for their selection. Numbers are used, but letters are
         #added in case users can't follow instructions.
-        print('[1] Z Calc\n[2] E Calc\n[3] Ratio Calc\n[4] BAL Check\n[5] Quit')
+        print('[1] Z Calc\n[2] E Calc\n[3] Ratio Calc\n[4] BAL Check\n[5] E Calc 2\n[6] Delta V\n[7] Quit')
         print(linestr)
         n = input('Selection: ')
         if ((n == '1')|(n == 'Z')|(n == 'z')):
@@ -468,6 +560,10 @@ def main_menu():
             ratio_calc()
         elif ((n == '4')|(n == 'B')|(n == 'b')):
             bal_check()
+        elif ((n == '5')|(n == 'E2')|(n == 'e2')):
+            e_calc2()
+        elif ((n== '6')|(n == 'D')|(n == 'd')):
+            v_diff()
         else:
             print('\n')
             print(boxstr)
