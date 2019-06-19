@@ -197,8 +197,8 @@ class spectrum:
             plt.show()
 
 #This is mainly for testing the functions within the class.
-if __name__=='__main__':
-    spec = spectrum('spec-7379-56713-0938-dr16.fits')
-    spec.paper_plot_small(smooth=True,err=True,sky=True,scale_sky=True)
-    spec.plot_large(smooth=True,err=True,sky=True,scale_sky=True)
-    spec.poster_plot(smooth=True,err=True,sky=True,scale_sky=True)
+#if __name__=='__main__':
+    #spec = spectrum('spec-7379-56713-0938-dr16.fits')
+    #spec.paper_plot_small(smooth=True,err=True,sky=True,scale_sky=True)
+    #spec.plot_large(smooth=True,err=True,sky=True,scale_sky=True)
+    #spec.poster_plot(smooth=True,err=True,sky=True,scale_sky=True)
