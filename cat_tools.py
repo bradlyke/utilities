@@ -11,36 +11,25 @@ from sciCon import mks
 
 #Makes either a PMF hash array or a PM hash array. Parameter include_fiber
 #controls this. Returns a 1-D array of strings.
-def mk_hash(inrec,include_fiber=True):
+def mk_hash(inrec,include_fiber=True,include_mjd=True,mname='MJD',fibname='FIBERID'):
     tmark.tm('Creating Hash Array')
     num_rec = len(inrec)
-    #max_plate = str(np.amax(inrec['PLATE']))
-    #len_plate = len(max_plate)
     len_plate = 5
-    if include_fiber==True:
+    if ((include_fiber==True)&(include_mjd==True)):
         str_size = len_plate + 11
         rec_hsh = np.chararray(num_rec,itemsize=str_size,unicode=True)
-    else:
+        rec_hsh = np.array(['%05d-%05d-%04d'%(pt,mt,ft) for pt,mt,ft in zip(
+                            inrec['PLATE'],inrec[mname],inrec[fibname])])
+    elif ((include_fiber==False)&(include_mjd==True)):
         str_size = len_plate + 6
         rec_hsh = np.chararray(num_rec,itemsize=str_size,unicode=True)
-    if include_fiber==True:
-        rec_hsh = np.array(['%05d-%05d-%04d'%(pt,mt,ft) for pt,mt,ft in zip(
-                            inrec['PLATE'],inrec['MJD'],inrec['FIBERID'])])
-    else:
         rec_hsh = np.array(['%05d-%05d'%(pt,mt) for pt,mt in zip(
-                            inrec['PLATE'],inrec['MJD'])])
-    '''
-    for i in range(num_rec):
-        pt = input_rec['PLATE'][i]
-        mt = input_rec['MJD'][i]
-        if include_fiber == True:
-            ft = input_rec['FIBERID'][i]
-            hst = '{0:0{1}d}-{2:05d}-{3:04d}'.format(pt,len_plate,mt,ft)
-        else:
-            hst = '{0:0{1}d}-{2:05d}'.format(pt,len_plate,mt)
-        rec_hsh[i] = hst
-        pb.pbar(i,num_rec)
-    '''
+                            inrec['PLATE'],inrec[mname])])
+    elif ((include_fiber==True)&(include_mjd==False)):
+        str_size = len_plate + 5
+        rec_hsh = np.chararray(num_rec,itemsize=str_size,unicode=True)
+        rec_hsh = np.array(['%05d-%04d'%(pt,ft) for pt,ft in zip(
+                            inrec['PLATE'],inrec[fibname])])
     return rec_hsh
 
 #This function is designed to load a FITS table into a numpy structured array,
