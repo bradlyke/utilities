@@ -1,6 +1,9 @@
 from astropy.io import fits
 import numpy as np
 
+#Note, this multiwave_maker uses the maximum number of duplicates from testing.
+#The catalog that may be loaded into this array may have the XXX_DUPLICATE fields
+#of length 99, so be careful when copying over.
 def multiwave_maker(num_rec):
     colarr = np.array(['SDSS_NAME-U18',
                         'RA-float64',
@@ -18,7 +21,6 @@ def multiwave_maker(num_rec):
                         'Z_CONF_10K-int16',
                         'PIPE_CORR_10K-int16',
                         'IS_QSO_10K-int16',
-                        'PRIM_REC-int16',
                         'THING_ID-int64',
                         'Z_VI-float64',
                         'Z_CONF-int16',
@@ -76,10 +78,10 @@ def multiwave_maker(num_rec):
                         'NSPEC_SDSS-int32',
                         'NSPEC_BOSS-int32',
                         'NSPEC-int32',
-                        'PLATE_DUPLICATE-99int32',
-                        'MJD_DUPLICATE-99int32',
-                        'FIBERID_DUPLICATE-99int16',
-                        'SPECTRO_DUPLICATE-99int16',
+                        'PLATE_DUPLICATE-74int32',
+                        'MJD_DUPLICATE-74int32',
+                        'FIBERID_DUPLICATE-74int16',
+                        'SPECTRO_DUPLICATE-74int16',
                         'SKYVERSION-B',
                         'RUN_NUMBER-int32',
                         'RERUN_NUMBER-U3',
