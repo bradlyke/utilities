@@ -186,24 +186,19 @@ def multiwave_maker(num_rec):
                         'GAIA_MATCHED-int16',
                         'GAIA_DESIGNATION-U28',
                         'GAIA_RA-float64',
-                        'GAIA_RA_ERR-float64',
                         'GAIA_DEC-float64',
-                        'GAIA_DEC_ERR-float64',
                         'GAIA_PARALLAX-float64',
                         'GAIA_PARALLAX_ERR-float64',
                         'GAIA_PM_RA-float64',
                         'GAIA_PM_RA_ERR-float64',
                         'GAIA_PM_DEC-float64',
                         'GAIA_PM_DEC_ERR-float64',
-                        'GAIA_G_FLUX-float64',
-                        'GAIA_G_FLUX_ERR-float64',
                         'GAIA_G_MAG-float64',
-                        'GAIA_BP_FLUX-float64',
-                        'GAIA_BP_FLUX_ERR-float64',
+                        'GAIA_G_FLUX_SNR-float64',
                         'GAIA_BP_MAG-float64',
-                        'GAIA_RP_FLUX-float64',
-                        'GAIA_RP_FLUX_ERR-float64',
+                        'GAIA_BP_FLUX_SNR-float64',
                         'GAIA_RP_MAG-float64',
+                        'GAIA_RP_FLUX_SNR-float64',
                         'SDSS2GAIA_SEP-float64'])
     col_names = np.array([])
     col_forms = np.array([])
@@ -313,7 +308,6 @@ def supercat_maker(num_rec):
                         'PSFMAG-5float32',
                         'PSFMAGERR-5float64',
                         'EXTINCTION-5float32',
-                        'M_I-float64',
                         'SN_MEDIAN_ALL-float64'])
 
     col_names = np.array([])
