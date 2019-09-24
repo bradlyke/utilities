@@ -134,10 +134,12 @@ def fet(in_rec,in_name,quiet=False):
 #rec_match_srt only works well with hash arrays (they compare one array)
 #so you will need to use mk_hsh_arr first to make PMF hash arrays for each fits
 #flat file.
-def rec_match_srt(rec1,rec2):
+def rec_match_srt(rec1,rec2,verbose=True):
     rec1a = np.argsort(rec1)
     rec2a = np.argsort(rec2)
-    tmark.tm('Starting Searchsorted')
+    if verbose==True:
+        tmark.tm('Starting Searchsorted')
+
     sort_left_rec1 = rec1[rec1a].searchsorted(rec2[rec2a],side='left')
     sort_right_rec1 = rec1[rec1a].searchsorted(rec2[rec2a],side='right')
     sort_left_rec2 = rec2[rec2a].searchsorted(rec1[rec1a],side='left')
