@@ -1,3 +1,11 @@
+"""
+This is similar to the abs_mag.py in the dr16q repository, but includes
+three different options for integration (for testing purposes).
+1) prop_dist_reim() - Simple Reimann sum with small steps.
+2) prop_dist_trap() - Trapezoid method
+3) prop_dist_simp() - Simpson's method
+"""
+
 from astropy.io import fits
 import numpy as np
 import fits_writer_error_trap as fet
