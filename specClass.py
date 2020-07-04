@@ -39,11 +39,14 @@ class Spectrum:
         #arrays to hold the smoothed flux and ivar.
         box_flux = np.zeros(num_dpoints,dtype='f8')
         box_ivar = np.zeros(num_dpoints,dtype='f8')
-        box_flux[:] = flux_arr[:]
-        box_ivar[:] = flux_var[:]
+        box_flux[:] = flux_arr[:] #Take away the brackets and colon to see the
+        box_ivar[:] = flux_var[:] #difference between mutable and immutable in python.
 
         for i in range(num_dpoints):
             #Define range of values to smooth
+            #We have to check if the window can be symmetrical. If it is closer
+            #to the edge of spectrum than half of smooth_pct it can't be
+            #symmetrical, so modify the denominator when averaging.
             if i < int(box_size/2):
                 lower = 0
             else:
@@ -52,7 +55,18 @@ class Spectrum:
                 upper = num_dpoints
             else:
                 upper = int(box_size/2) + i
-            #Smooth the values depending on smoothing type
+
+            '''
+            Smooth the values depending on smoothing type
+            Note: Different weight types can lead to very different smoothed
+                spectra. 'var' can lead to a lot of discontinuities and
+                flat regions in a spectrum.
+            'new' and 'old' refer to which set of data is used to average the
+                points. 'new' will include previously smoothed data points, while
+                'old' will average a point based on the source flux, ignoring
+                the smoothed flux values of previous points. 'new' is a proper
+                moving average, but produces less useful plots.
+            '''
             if weight==True:
                 if wtype=='sig' and style=='new':
                     signal_temp = box_flux[lower:upper]
@@ -69,7 +83,15 @@ class Spectrum:
                 #numpy weighted average is the same as:
                 #  np.sum(data * weights) / np.sum(weights)
                 flux_temp = np.average(signal_temp,weights=noise_temp)
-                ivar_temp = (np.average((signal_temp-flux_temp)**2, weights=noise_temp))**(-1.0)
+                #ivar_temp = (np.average((signal_temp-flux_temp)**2, weights=noise_temp))**(-1.0)
+                wbar = np.average(noise_temp)
+                n = len(signal_temp)
+                k = n / ((n-1)*(np.sum(noise_temp))**(2))
+                a = np.sum(((noise_temp*signal_temp) - (wbar*flux_temp))**(2))
+                b = 2*flux_temp*np.sum((noise_temp - wbar)*((noise_temp*signal_temp)-(wbar*flux_temp)))
+                d = flux_temp**(2)*np.sum((noise_temp-wbar)**(2))
+                ivar_temp = (k*(a+b+d))**(-1.0)
+                #ivar_temp = (np.average((signal_temp-flux_temp)**2))**(-1.0)
             else:
                 if style=='new':
                     signal_temp = box_flux[lower:upper]
@@ -107,7 +129,7 @@ class Spectrum:
         #the rest frame wavelength range depends on the redshift. This will
         #be used by rest_tick_step_gen to find the spacing between the major
         #ticks in the rest frame wavelengths along the top x-axis.
-        #This rounds a value to the nearest 100 Ang.
+        #This rounds an integer value to the nearest 100 Ang.
         def round_updown(tval):
             rup = tval + (-tval %100)
             rdo = tval + (-tval % -100)
@@ -149,8 +171,9 @@ class Spectrum:
         if rest_twin==True:
             axT = ax.twiny()
         if smooth==True:
-            self.bflux,self.berr = self.boxcar(self.flux,self.ivar,smooth_box,
-                                    weight=weighted_avg,wtype=weight_type,style=smooth_style)
+            self.bflux,self.bvar = self.boxcar(self.flux,self.ivar,smooth_box,
+                                    weight=weighted_avg,wtype=weight_type,
+                                    style=smooth_style)
             ax.plot(self.lam,self.flux,color='0.70',linewidth=0.8)
             ax.plot(self.lam,self.bflux,color='black',linewidth=0.6)
         else:
@@ -162,7 +185,12 @@ class Spectrum:
                 self.sky = self.data['sky']
             ax.plot(self.lam,self.sky,color='green',linewidth=0.7,alpha=0.5)
         if err==True:
-            ax.plot(self.lam,self.ferr,color='red',linewidth=0.6)
+            if smooth==True:
+                self.berr = np.sqrt(self.bvar)**(-1.0)
+                ax.plot(self.lam,self.ferr,color='red',linewidth=0.6)
+                ax.plot(self.lam,self.berr+1,color='darkorange',linestyle='--', linewidth=0.6)
+            else:
+                ax.plot(self.lam,self.ferr,color='red',linewidth=0.6)
         ax.set_xlim((x_lower,x_upper))
         ax.set_xticks(np.arange(4000,11000,1000))
         ax.set_xlabel(r'\textbf{Observed Frame Wavelength (\AA)}')
@@ -239,8 +267,9 @@ if __name__=='__main__':
     if args.default_params==True:
         args.rest_top = True
         args.smooth = True
-        args.smooth_box = 1000
+        args.smooth_box = 10
         #args.weighted = True
+        args.error = True
     spec.plot_spec(args.t, rest_twin=args.rest_top, spec_redshift=args.redshift,
                     smooth=args.smooth, smooth_box=args.smooth_box,
                     smooth_style=args.smooth_style, weighted_avg=args.weighted,
