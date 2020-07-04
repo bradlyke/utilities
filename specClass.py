@@ -14,8 +14,8 @@ matplotlib.rc('ytick.major',size=8)
 matplotlib.rc('ytick.minor',visible=True,size=5)
 matplotlib.rc('legend',framealpha=0)
 
-#A spectrum is a class. The object has 3 attributes right now: self, boxcar,
-#plot_spec.
+#  A spectrum is a class. The object has 3 attributes right now:
+#    self, boxcar, plot_spec.
 class Spectrum:
     #initialize the object by loading the file. Needs a file name for infile.
     def __init__(self,infile):
@@ -25,18 +25,22 @@ class Spectrum:
         self.lam = 10**self.loglam #Convert this to a decimal wavelength in Angstroms.
         self.flux = self.data['flux'] #Load the flux. Absolute, units are in plot.
         self.ivar = self.data['ivar'] #Load the inverse variance. Needed for plotting and boxcar.
-        self.ferr = self.data['ivar']**(-0.5)
+        self.ferr = np.sqrt(self.data['ivar'])**(-1.0)
 
-    #We want to be able to smooth it fairly easily. Smooth_pct = 10 is good for some stuff.
-    def boxcar(self,flux_arr,flux_var,smooth_pct,weight=False):
+    #We want to be able to smooth it fairly easily. Smooth_pct = 10 is good for
+    #emphasizing emission/absorption lines in quasars
+    def boxcar(self,flux_arr,flux_var,smooth_pct,weight=False,wtype='sig',style='new'):
         box_size = smooth_pct
+        #The box width has to be an even value, if it isn't, increase it by 1.
         if box_size%2 != 0:
             box_size += 1
-        num_dpoints = len(flux_arr)
+        num_dpoints = len(flux_arr) #total number of data points
+        #We don't want to modify the raw flux data, so create a new set of
+        #arrays to hold the smoothed flux and ivar.
         box_flux = np.zeros(num_dpoints,dtype='f8')
-        box_err = np.zeros(num_dpoints,dtype='f8')
+        box_ivar = np.zeros(num_dpoints,dtype='f8')
         box_flux[:] = flux_arr[:]
-        box_err[:] = flux_var[:]
+        box_ivar[:] = flux_var[:]
 
         for i in range(num_dpoints):
             #Define range of values to smooth
@@ -50,23 +54,45 @@ class Spectrum:
                 upper = int(box_size/2) + i
             #Smooth the values depending on smoothing type
             if weight==True:
-                noise_temp = np.sqrt(box_err[lower:upper])
-                signal_temp = box_flux[lower:upper]
+                if wtype=='sig' and style=='new':
+                    signal_temp = box_flux[lower:upper]
+                    noise_temp = np.sqrt(box_ivar[lower:upper]) #weight = 1/sigma
+                elif wtype=='var' and style=='new':
+                    signal_temp = box_flux[lower:upper]
+                    noise_temp = box_ivar[lower:upper] #weight = 1/sigma**2
+                elif wtype=='sig' and style=='old':
+                    signal_temp = flux_arr[lower:upper]
+                    noise_temp = np.sqrt(flux_var[lower:upper]) #weight = 1/sigma
+                else: #wtype=='var' and style=='old' should be everything else
+                    signal_temp = flux_arr[lower:upper]
+                    noise_temp = flux_var[lower:upper] #weight = 1/sigma**2
+                #numpy weighted average is the same as:
+                #  np.sum(data * weights) / np.sum(weights)
                 flux_temp = np.average(signal_temp,weights=noise_temp)
                 ivar_temp = (np.average((signal_temp-flux_temp)**2, weights=noise_temp))**(-1.0)
             else:
-                signal_temp = box_flux[lower:upper]
+                if style=='new':
+                    signal_temp = box_flux[lower:upper]
+                else:
+                    signal_temp = flux_arr[lower:upper]
                 flux_temp = np.median(signal_temp)
                 ivar_temp = (np.average((signal_temp-flux_temp)**2))**(-1.0)
 
             box_flux[i] = flux_temp
-            box_err[i] = ivar_temp
+            box_ivar[i] = ivar_temp
 
-        return box_flux,box_err
+        return box_flux,box_ivar
 
-
+    #This plots the spectrum based on the user-defined options
+    #It plots 3 sizes:
+    # (s)mall: fig_size = 5x4, font_size = 11
+    # (l)arge: fig_size = 10x4, font_size = 11
+    # (p)oster: fig_size = 30x12, font_size = 24
+    #--Need to fix font and tick size on poster, sizes now are good for
+    #  small and large only.
     def plot_spec(self, plot_size, rest_twin=False, spec_redshift=0.0,
-                    smooth=False, smooth_box=10, weighted_avg=False,
+                    smooth=False, smooth_box=10, smooth_style='new',
+                    weighted_avg=False, weight_type='sig',
                     err=False, sky=False, scale_sky=False,
                     save=False, file_type='png'):
         wobs = np.where((self.lam>=3700)&(self.lam<=10000))[0]
@@ -77,6 +103,11 @@ class Spectrum:
         x_lower = np.amin(self.lam)
         x_upper = np.amax(self.lam)
 
+        #All of the SDSS spectra have the same OBSERVED wavelength range, but
+        #the rest frame wavelength range depends on the redshift. This will
+        #be used by rest_tick_step_gen to find the spacing between the major
+        #ticks in the rest frame wavelengths along the top x-axis.
+        #This rounds a value to the nearest 100 Ang.
         def round_updown(tval):
             rup = tval + (-tval %100)
             rdo = tval + (-tval % -100)
@@ -87,6 +118,9 @@ class Spectrum:
                 y = rdo
             return y
 
+        #This will find the step size between major ticks in the rest frame
+        #based on the redshift. If the spacing would be 900 Ang or more, then
+        #just set it to 2000 Ang. The bottom already uses 1000 Ang.
         def rest_tick_step_gen(obs_min,obs_max,z_in):
             if z_in < 0.5:
                 return 2000
@@ -96,8 +130,10 @@ class Spectrum:
                 step_size = round_updown(int((rest_max - rest_min)/5))
                 return step_size
 
+        #Get the rest ticks step size
         rest_ticks = rest_tick_step_gen(x_lower,x_upper,spec_redshift)
 
+        #Set the figure size and font size appropriate to the plot size.
         if plot_size=='s':
             matplotlib.rc('font',size=11)
             fig,ax = plt.subplots(figsize=(5,4))
@@ -108,10 +144,13 @@ class Spectrum:
             matplotlib.rc('font',size=24)
             fig,ax = plt.subplots(figsize=(15,12))
 
+        #The will twin the x-axis along the top so we can set the rest frame
+        #wavelength ticks separately from the observed frame (bottom).
         if rest_twin==True:
             axT = ax.twiny()
         if smooth==True:
-            self.bflux,self.berr = self.boxcar(self.flux,self.ivar,smooth_box,weight=weighted_avg)
+            self.bflux,self.berr = self.boxcar(self.flux,self.ivar,smooth_box,
+                                    weight=weighted_avg,wtype=weight_type,style=smooth_style)
             ax.plot(self.lam,self.flux,color='0.70',linewidth=0.8)
             ax.plot(self.lam,self.bflux,color='black',linewidth=0.6)
         else:
@@ -172,8 +211,12 @@ if __name__=='__main__':
                         help='Smooth spectrum source flux')
     parser.add_argument('-n', '--smooth_box', type=int, default=10, metavar='',
                         help='Smoothing window size in pixels, must be even')
+    parser.add_argument('-y', '--smooth_style', choices=['old','new'], default='new',
+                        metavar='', help='Smoothing style to use')
     parser.add_argument('-w', '--weighted', action='store_true',
                         help='Use an error-weighted smoothing')
+    parser.add_argument('-v', '--weight_type', choices=['sig','var'],default='sig',
+                        metavar='', help='Type of weight for smoothing: sigma or variance')
     parser.add_argument('-e', '--error', action='store_true',
                         help='Include the error spectrum in red')
     parser.add_argument('-k', '--sky', action='store_true',
@@ -187,22 +230,20 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
+    #This is a default spectrum to test with from DR16Q.
     spec = Spectrum('../dr16q/data/spec-7672-57339-0394.fits')
+    #The reported redshift is based on CIII:
+    #    the following is based on the Lyman Break
     args.redshift = 3.303
-    '''
-    def plot_spec(self, plot_size, rest_twin=False, spec_redshift=1.0,
-                    smooth=False, smooth_box=10, weighted_avg=False,
-                    err=False, sky=False, scale_sky=False,
-                    save=False, file_type='png')
-    '''
+
     if args.default_params==True:
         args.rest_top = True
         args.smooth = True
-        args.smooth_box = 10
-        args.weighted = True
-        args.error = True
+        args.smooth_box = 1000
+        #args.weighted = True
     spec.plot_spec(args.t, rest_twin=args.rest_top, spec_redshift=args.redshift,
                     smooth=args.smooth, smooth_box=args.smooth_box,
-                    weighted_avg=args.weighted, err=args.error, sky=args.sky,
+                    smooth_style=args.smooth_style, weighted_avg=args.weighted,
+                    weight_type=args.weight_type, err=args.error, sky=args.sky,
                     scale_sky=args.scale_sky, save=args.save,
                     file_type=args.file_type)
