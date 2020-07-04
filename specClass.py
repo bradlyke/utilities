@@ -29,7 +29,7 @@ class Spectrum:
 
     #We want to be able to smooth it fairly easily. Smooth_pct = 10 is good for
     #emphasizing emission/absorption lines in quasars
-    def boxcar(self,flux_arr,flux_var,smooth_pct,weight=False,wtype='sig',style='new'):
+    def boxcar(self,flux_arr,flux_var,smooth_pct,weight=False,wtype='sig',style='recursive'):
         box_size = smooth_pct
         #The box width has to be an even value, if it isn't, increase it by 1.
         if box_size%2 != 0:
@@ -61,23 +61,23 @@ class Spectrum:
             Note: Different weight types can lead to very different smoothed
                 spectra. 'var' can lead to a lot of discontinuities and
                 flat regions in a spectrum.
-            'new' and 'old' refer to which set of data is used to average the
-                points. 'new' will include previously smoothed data points, while
-                'old' will average a point based on the source flux, ignoring
-                the smoothed flux values of previous points. 'new' is a proper
+            'recursive' and 'source' refer to which set of data is used to average the
+                points. 'recursive' will include previously smoothed data points, while
+                'source' will average a point based on the source flux, ignoring
+                the smoothed flux values of previous points. 'recursive' is a proper
                 moving average, but produces less useful plots.
             '''
             if weight==True:
-                if wtype=='sig' and style=='new':
+                if wtype=='sig' and style=='recursive':
                     signal_temp = box_flux[lower:upper]
                     noise_temp = np.sqrt(box_ivar[lower:upper]) #weight = 1/sigma
-                elif wtype=='var' and style=='new':
+                elif wtype=='var' and style=='recursive':
                     signal_temp = box_flux[lower:upper]
                     noise_temp = box_ivar[lower:upper] #weight = 1/sigma**2
-                elif wtype=='sig' and style=='old':
+                elif wtype=='sig' and style=='source':
                     signal_temp = flux_arr[lower:upper]
                     noise_temp = np.sqrt(flux_var[lower:upper]) #weight = 1/sigma
-                else: #wtype=='var' and style=='old' should be everything else
+                else: #wtype=='var' and style=='source' should be everything else
                     signal_temp = flux_arr[lower:upper]
                     noise_temp = flux_var[lower:upper] #weight = 1/sigma**2
                 #numpy weighted average is the same as:
@@ -91,9 +91,9 @@ class Spectrum:
                 b = 2*flux_temp*np.sum((noise_temp - wbar)*((noise_temp*signal_temp)-(wbar*flux_temp)))
                 d = flux_temp**(2)*np.sum((noise_temp-wbar)**(2))
                 ivar_temp = (k*(a+b+d))**(-1.0)
-                #ivar_temp = (np.average((signal_temp-flux_temp)**2))**(-1.0)
+                #ivar_temp = (np.average((signal_temp-flux_temp)**2, weights=noise_temp))**(-1.0)
             else:
-                if style=='new':
+                if style=='recursive':
                     signal_temp = box_flux[lower:upper]
                 else:
                     signal_temp = flux_arr[lower:upper]
@@ -113,7 +113,7 @@ class Spectrum:
     #--Need to fix font and tick size on poster, sizes now are good for
     #  small and large only.
     def plot_spec(self, plot_size, rest_twin=False, spec_redshift=0.0,
-                    smooth=False, smooth_box=10, smooth_style='new',
+                    smooth=False, smooth_box=10, smooth_style='recursive',
                     weighted_avg=False, weight_type='sig',
                     err=False, sky=False, scale_sky=False,
                     save=False, file_type='png'):
@@ -239,7 +239,7 @@ if __name__=='__main__':
                         help='Smooth spectrum source flux')
     parser.add_argument('-n', '--smooth_box', type=int, default=10, metavar='',
                         help='Smoothing window size in pixels, must be even')
-    parser.add_argument('-y', '--smooth_style', choices=['old','new'], default='new',
+    parser.add_argument('-y', '--smooth_style', choices=['source','recursive'], default='recursive',
                         metavar='', help='Smoothing style to use')
     parser.add_argument('-w', '--weighted', action='store_true',
                         help='Use an error-weighted smoothing')
