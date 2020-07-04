@@ -320,7 +320,7 @@ if __name__=='__main__':
         #This is a default spectrum to test with from DR16Q.
         #    spec-7672-57339-0394.fits
         #The reported redshift is based on CIII:
-        #    the following is based on the Lyman Break
+        #    the one below is based on the Lyman Break
         #args.plot_size = 'l'
         args.rest_top = True
         args.redshift = 3.303
