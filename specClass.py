@@ -1,5 +1,8 @@
 #Import the tools necessary to work with spectra files.
-import cat_tools as ct #This is a tool I wrote, so you'll need the script in your path.
+from astropy.io import fits
+from astropy.coordinates import SkyCoord as sc
+from astropy import units as u
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -14,18 +17,57 @@ matplotlib.rc('ytick.major',size=8)
 matplotlib.rc('ytick.minor',visible=True,size=5)
 matplotlib.rc('legend',framealpha=0)
 
-#  A spectrum is a class. The object has 3 attributes right now:
-#    self, boxcar, plot_spec.
+'''
+A spectrum is a class, which has 11 attributes right now:
+   infile : file name of spectrum
+   data : the full astropy fits array in HDU 1 of the spectrum file
+   head : the full astropy fits header in HDU 0 of the spectrum file
+   loglam : the observed wavelengths (x-axis) in log-lambda space
+   lam : the observed wavelengths (x-axis) in decimal Angstroms
+   flux : the flux density values in SDSS units for each point (y-axis)
+   ivar : the inverse variance of the flux density (1/sigma^2)
+   ferr : the error of the flux density (sigma)
+   name : the SDSS name with proper leading zeros and truncation on seconds
+            in the format 'SDSS JHH:MM:SS.SS+DD:MM:SS.S', + is +/-
+   boxcar : the boxcar (square-window) smoothing function which
+            returns the smoothed flux and smoothed ivar
+   plot_spec : plots the spectrum based on user-defined options
+'''
 class Spectrum:
     #initialize the object by loading the file. Needs a file name for infile.
     def __init__(self,infile):
         self.infile = infile #Load the filename as a thing for later use in plot saving.
-        self.data = ct.file_load(infile) #Load the file as a numpy structured array.
+        self.data = fits.open(infile)[1].data #Load the file as a numpy structured array.
+        self.head = fits.open(infile)[0].header #load the header for
         self.loglam = self.data['loglam'] #SDSS stores wavelengths as log10 values.
         self.lam = 10**self.loglam #Convert this to a decimal wavelength in Angstroms.
         self.flux = self.data['flux'] #Load the flux. Absolute, units are in plot.
-        self.ivar = self.data['ivar'] #Load the inverse variance. Needed for plotting and boxcar.
-        self.ferr = np.sqrt(self.data['ivar'])**(-1.0)
+        self.ivar = self.data['ivar'] #Load the inverse variance. Needed for boxcar.
+
+        #We don't care if the error has inf values. They won't be plotted
+        #anyways, so catch the 'divide by zero' warning and don't display it.
+        def warn_func():
+            warnings.warn("divide by zero", RuntimeWarning)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            warn_func()
+            self.ferr = np.sqrt(self.data['ivar'])**(-1.0); #Error for plotting
+
+        def get_name(in_ra,in_dec):
+            coords = sc(ra=in_ra*u.degree,dec=in_dec*u.degree)
+            c_hms = coords.ra.hms
+            c_dms = coords.dec.dms
+            c_raS,c_decS = str(c_hms.s)[0:5],str(c_dms.s)[0:4]
+            if in_dec >= 0:
+                name_sign = '+'
+            else:
+                name_sign = '-'
+            ra_str = '{:02d}{:02d}{:5s}'.format(int(c_hms.h),int(c_hms.m),c_raS)
+            dec_str = '{:02d}{:02d}{:4s}'.format(int(c_dms.d),int(c_dms.m),c_decS)
+            sdss_name = 'SDSS J{}{}{}'.format(ra_str,name_sign,dec_str)
+            return sdss_name
+
+        self.name = get_name(self.head['PLUG_RA'],self.head['PLUG_DEC'])
 
     #We want to be able to smooth it fairly easily. Smooth_pct = 10 is good for
     #emphasizing emission/absorption lines in quasars
@@ -98,20 +140,22 @@ class Spectrum:
                 else:
                     signal_temp = flux_arr[lower:upper]
                 flux_temp = np.median(signal_temp)
-                ivar_temp = (np.average((signal_temp-flux_temp)**2))**(-1.0)
+                ivar_temp = flux_var[i] #this isn't right, not supported right now
 
             box_flux[i] = flux_temp
             box_ivar[i] = ivar_temp
 
         return box_flux,box_ivar
 
-    #This plots the spectrum based on the user-defined options
-    #It plots 3 sizes:
-    # (s)mall: fig_size = 5x4, font_size = 11
-    # (l)arge: fig_size = 10x4, font_size = 11
-    # (p)oster: fig_size = 30x12, font_size = 24
-    #--Need to fix font and tick size on poster, sizes now are good for
-    #  small and large only.
+    '''
+    This plots the spectrum based on the user-defined options
+    It plots 3 sizes:
+        (s)mall: fig_size = 5x4, font_size = 11
+        (l)arge: fig_size = 10x4, font_size = 11
+        (p)oster: fig_size = 30x12, font_size = 24
+    --Need to fix font and tick size on poster, sizes now are good for
+        small and large only. Poster will default to large for now.
+    '''
     def plot_spec(self, plot_size, rest_twin=False, spec_redshift=0.0,
                     smooth=False, smooth_box=10, smooth_style='recursive',
                     weighted_avg=False, weight_type='sig',
@@ -156,15 +200,17 @@ class Spectrum:
         rest_ticks = rest_tick_step_gen(x_lower,x_upper,spec_redshift)
 
         #Set the figure size and font size appropriate to the plot size.
+        #Poster size isn't supported for right now, so it defaults to
+        #large.
         if plot_size=='s':
             matplotlib.rc('font',size=11)
             fig,ax = plt.subplots(figsize=(5,4))
-        elif plot_size=='l':
+        elif plot_size=='l' or plot_size=='p':
             matplotlib.rc('font',size=11)
             fig,ax = plt.subplots(figsize=(10,4))
-        else:
-            matplotlib.rc('font',size=24)
-            fig,ax = plt.subplots(figsize=(15,12))
+        #else:
+            #matplotlib.rc('font',size=24)
+            #fig,ax = plt.subplots(figsize=(15,12))
 
         #The will twin the x-axis along the top so we can set the rest frame
         #wavelength ticks separately from the observed frame (bottom).
@@ -187,26 +233,33 @@ class Spectrum:
         if err==True:
             if smooth==True:
                 self.berr = np.sqrt(self.bvar)**(-1.0)
+                #self.ferr is the source error unsmoothed
                 ax.plot(self.lam,self.ferr,color='red',linewidth=0.6)
+                #We need to give the smoothed error a vertical shift so it's visible.
                 ax.plot(self.lam,self.berr+1,color='darkorange',linestyle='--', linewidth=0.6)
             else:
                 ax.plot(self.lam,self.ferr,color='red',linewidth=0.6)
+        #Set up x-axis ticks and labels. If rest_twin is true, only sets up the
+        #bottom x-axis.
         ax.set_xlim((x_lower,x_upper))
         ax.set_xticks(np.arange(4000,11000,1000))
         ax.set_xlabel(r'\textbf{Observed Frame Wavelength (\AA)}')
         ax.xaxis.set_minor_locator(ticker.MultipleLocator(100))
+        #Will format the top x-axis ticks and label in the rest frame if selected
         if rest_twin==True:
             axT.set_xlim((x_lower/(1+spec_redshift),x_upper/(1+spec_redshift)))
             axT.set_xlabel(r'\textbf{Rest Frame Wavelength (\AA)}')
             axT.xaxis.set_major_locator(ticker.MultipleLocator(rest_ticks))
             axT.xaxis.set_minor_locator(ticker.AutoMinorLocator(4))
+        #Set up the y-axis ticks and label.
         ax.set_ylim((y_lower,y_upper))
         ax.set_ylabel(r'$f_{\lambda}$ ($10^{-17}$ \textbf{ergs s}$^{-1}$ \textbf{cm}$^{-2}$\,\textbf{\AA}$^{-1}$)')
+        ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
 
-        name_str = r'\textbf{SDSS J003713.64+241121.5, z = %.3f}'%spec_redshift
+        #Puts a text string in the plot with SDSS name and redshift.
+        name_str = r'\textbf{%s, z = %.3f}'%(self.name,spec_redshift)
         ax.text(0.6,0.95,name_str,transform=ax.transAxes, verticalalignment='top',
                     bbox=dict(boxstyle='square,pad=0.2',fc='magenta',alpha=0.0))
-        ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
 
         plt.tight_layout()
         if save==True:
@@ -228,7 +281,11 @@ class Spectrum:
 if __name__=='__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Plot one of the spectra in Lyke et al. 2020')
-    parser.add_argument('t', choices=['s','l','p'], help='Plot size: (s)mall, (l)arge, (p)oster')
+    parser.add_argument('specfile', metavar='{spectrum file name}',
+                        help='File path for the SDSS spectrum file')
+    parser.add_argument('-t', '--plot_size', choices=['s','l','p'], metavar='',
+                        default='l',
+                        help='Plot size: (s)mall, (l)arge, (p)oster')
     parser.add_argument('-d', '--default_params', action='store_true',
                         help='Use a default parameter set for testing')
     parser.add_argument('-r', '--rest_top', action='store_true',
@@ -258,19 +315,20 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    #This is a default spectrum to test with from DR16Q.
-    spec = Spectrum('../dr16q/data/spec-7672-57339-0394.fits')
-    #The reported redshift is based on CIII:
-    #    the following is based on the Lyman Break
-    args.redshift = 3.303
-
+    spec = Spectrum(args.specfile)
     if args.default_params==True:
+        #This is a default spectrum to test with from DR16Q.
+        #    spec-7672-57339-0394.fits
+        #The reported redshift is based on CIII:
+        #    the following is based on the Lyman Break
+        #args.plot_size = 'l'
         args.rest_top = True
+        args.redshift = 3.303
         args.smooth = True
         args.smooth_box = 10
-        #args.weighted = True
+        args.weighted = True
         args.error = True
-    spec.plot_spec(args.t, rest_twin=args.rest_top, spec_redshift=args.redshift,
+    spec.plot_spec(args.plot_size, rest_twin=args.rest_top, spec_redshift=args.redshift,
                     smooth=args.smooth, smooth_box=args.smooth_box,
                     smooth_style=args.smooth_style, weighted_avg=args.weighted,
                     weight_type=args.weight_type, err=args.error, sky=args.sky,
