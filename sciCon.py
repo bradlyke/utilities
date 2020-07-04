@@ -68,7 +68,7 @@ class cgs:
 #This is for natural units where c = 1, etc. Also where energies are stored in
 #electron volts.
 class nat:
-    c = 2.9979258e18 #speed of light in Ang / s
+    c = 2.99792458e18 #speed of light in Ang / s
     #G = 6.67408e-13 #Gravitational constant, N cm^2/g^2
     #Na = 6.022e23 #Avogadro's constant, unitless
     #R = 8.31e7 #Ideal gas constant, erg/mol K
