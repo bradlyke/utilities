@@ -347,10 +347,10 @@ class SciCons:
         print(61*'-')
 
 # Import SciCons so you can load a set of constants in a given unit systems. Ex.
-#   from sciCon_v2 import SciCons
-#   mks = SciCons('mks')
-#   print(mks.c)
-#   ---299792458.0
+#   [1]: from sciCon_v2 import SciCons
+#   [2]: mks = SciCons('mks')
+#   [3]: print(mks.c)
+#   299792458.0
 if __name__=='__main__':
     import argparse
     parser = argparse.ArgumentParser(description='A set of scientific constants for MKS, CGS, or "Natural" units.')
