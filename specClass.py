@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import matplotlib.ticker as ticker
 matplotlib.rc('text',usetex=True)
-matplotlib.rcParams['text.latex.preamble'] = [r'\boldmath']
+matplotlib.rcParams['text.latex.preamble'] = r'\boldmath'
 matplotlib.rc('xtick',direction='in',top=True)
 matplotlib.rc('xtick.major',size=8)
 matplotlib.rc('xtick.minor',visible=True,size=5)
